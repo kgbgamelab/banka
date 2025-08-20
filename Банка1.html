@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Summer Memories Jar</title>
+<style>
+  :root{
+    --bg1:#FFEDD6; /* warm sand */
+    --bg2:#FFC7A8; /* peach */
+    --bg3:#FFA6A8; /* sunset pink */
+    --accent:#ffdb4d; /* golden */
+    --teal:#34d1bf;
+    --mint:#b6f2d8;
+    --rose:#ff8fb1;
+    --sky:#8ad1ff;
+    --leaf:#bff07e;
+    --plum:#c5afff;
+    --jar-lid:#d8a64f;
+    --text:#2b2b2b;
+    /* Jar image & clipping for this photo */
+    --jar-url: url('https://s3.iimg.su/s/19/gRJJvcMxER8H8yfsw1FbDAt6fZfnXthXXKOLJhQH.png');
+    --fill-top:14%; --fill-right:17%; --fill-bottom:13%; --fill-left:17%;
+  }
+
+  /* --- Layout --- */
+  html,body{height:100%;margin:0;font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", Arial, "Apple Color Emoji","Segoe UI Emoji";color:var(--text)}
+  body{
+    background: radial-gradient(1200px 600px at 70% -10%, #fff8, transparent 70%),
+                radial-gradient(900px 600px at 20% 110%, #fff6, transparent 70%),
+                linear-gradient(135deg,var(--bg1),var(--bg2) 40%,var(--bg3));
+    overflow:hidden;
+  }
+
+  .wrap{position:relative; height:100%; width:100%; display:grid; grid-template-rows:auto 1fr auto;}
+  header{ padding: 20px 24px 8px; text-align:center; }
+  h1{ margin:0; font-size:clamp(28px,4.5vw,44px); letter-spacing:0.5px; text-shadow:0 2px 0 #ffffff70; }
+  h1 span.sun{display:inline-block; transform:translateY(2px); filter: drop-shadow(0 2px 2px #00000015);} 
+  h2{ margin:10px 0 0; font-weight:600; font-size:clamp(14px,2.4vw,18px); opacity:.9 }
+
+  .stage{ position:relative; display:grid; grid-template-columns: 1fr minmax(280px, 420px) 1fr; gap:18px; align-items:center; height:100%; padding: 12px 18px 28px; }
+
+  /* Drop zones */
+  .drop-zone{ position:relative; height:72vh; min-height:420px; border:2px dashed #ffffff78; border-radius:18px; background:#ffffff29; backdrop-filter: blur(2px);}
+  .drop-zone h3{ position:absolute; inset:12px auto auto 12px; margin:0; font-size:14px; color:#0008; text-transform:uppercase; letter-spacing:1px; }
+  .drop-zone.left{ box-shadow: inset 0 0 0 2px #ffffff40, 0 20px 60px #00000012;}
+  .drop-zone.right{ box-shadow: inset 0 0 0 2px #ffffff40, 0 20px 60px #00000012;}
+
+  /* Jar area */
+  .jar-wrap{ position:relative; height:72vh; min-height:420px; display:flex; align-items:center; justify-content:center; }
+  .jar-hint{ position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:12px; color:#0008 }
+
+  /* Progress bar */
+  .progress{ width:min(640px, 88vw); height:14px; margin:8px auto 0; background:#ffffff66; border-radius:999px; box-shadow: inset 0 2px 6px #0000001a; position:relative; overflow:hidden; }
+  .progress .fill{ position:absolute; left:0; top:0; bottom:0; width:0%; background: linear-gradient(90deg, #7be495, #4cc9f0 70%); border-radius:inherit; transition: width .4s ease; }
+  .progress-label{ text-align:center; font-size:12px; margin-top:6px; opacity:.8; }
+
+  /* --- Jar (photo) --- */
+  .jar-photo{ position:relative; width:min(520px,80vw); aspect-ratio:1/1.05; cursor:pointer; filter: drop-shadow(0 10px 30px #00000026); transition: transform .25s ease, filter .25s ease; background: center/contain no-repeat var(--jar-url, url('')); }
+  .jar-photo:hover{ transform: translateY(-2px) scale(1.02); filter: drop-shadow(0 16px 38px #00000030); }
+  /* interior clipping area approximated to the inner glass region of the provided photo */
+  .jar-fill{ position:absolute; inset:var(--fill-top,14%) var(--fill-right,18%) var(--fill-bottom,18%) var(--fill-left,18%); pointer-events:none; }
+  /* visual stickers that indicate how full the jar is */
+  .jar-sticker{ position:absolute; width:18px; height:14px; border-radius:4px; transform: rotate(var(--r,0deg)) skewX(-5deg); box-shadow: 0 2px 6px #0003, inset 0 1px 0 #fff6; opacity:.95 }
+  .jar-sticker[color="peach"]{ background:#FFC78E; }
+  .jar-sticker[color="mint"]{ background:#BDEFD5; }
+  .jar-sticker[color="lemon"]{ background:#FFF27D; }
+  .jar-sticker[color="sky"]{ background:#AEE0FF; }
+  .jar-sticker[color="rose"]{ background:#FFB1C8; }
+
+  /* Remaining counter */
+  .counter{ position:absolute; top:-8px; right:-8px; background:#fff; color:#333; border-radius:999px; padding:6px 10px; font-weight:700; font-size:12px; box-shadow:0 6px 16px #00000022 }
+  .counter{ position:absolute; top:-8px; right:-8px; background:#fff; color:#333; border-radius:999px; padding:6px 10px; font-weight:700; font-size:12px; box-shadow:0 6px 16px #00000022 }
+
+  /* --- Note (paper) --- */
+  .note{ position:absolute; left:50%; top:44%; transform: translate(-50%, -50%) scale(.92) rotate(-1deg); user-select:none; touch-action:none; will-change: transform; }
+  .paper{ position:relative; display:flex; align-items:center; justify-content:center; min-width:120px; min-height:64px; padding:14px 16px; border-radius:12px; border:2px solid #00000010; box-shadow: 0 10px 24px #00000020, inset 0 1px 0 #fff9; backdrop-filter: blur(1px); transition: box-shadow .25s ease, transform .25s ease; box-sizing:border-box; }
+  /* matte paper texture */
+  .paper::before{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; background: repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 2px, rgba(0,0,0,.02) 2px 4px); opacity:.6; }
+  /* center crease */
+  .paper .crease{ position:absolute; left:50%; top:6px; bottom:6px; width:3px; transform: translateX(-50%); pointer-events:none; background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,0), rgba(0,0,0,.18)); filter: blur(.3px); opacity:.45; border-radius:2px; transition: opacity .5s ease; }
+  .note.unrolled .crease{ opacity:0; }
+  .paper .fold-left,.paper .fold-right{ position:absolute; top:0; bottom:0; width:50%; background: inherit; border-radius: inherit; pointer-events:none; transition: transform .5s cubic-bezier(.18,.89,.32,1.28); }
+  .paper .fold-left{ left:0; transform-origin:left center; box-shadow: inset -8px 0 12px rgba(0,0,0,.08); }
+  .paper .fold-right{ right:0; transform-origin:right center; box-shadow: inset 8px 0 12px rgba(0,0,0,.08); }
+  .note.rolled .fold-left,.note.rolled .fold-right{ transform: scaleX(1); }
+  .note.unrolled .fold-left,.note.unrolled .fold-right{ transform: scaleX(0); }
+  /* folded sticky (initial) */
+  .note.rolled .paper{ width:170px; height:84px; }
+  .note.rolled .text{ display:none; }
+  /* dog-ear removed */
+  /* unrolled full note */
+  .note.unrolled .paper{ width: var(--open-w, 380px); height: var(--open-h, 140px); }
+  .note.unrolled.wide .paper{ width: var(--open-w-wide, 460px); height: var(--open-h, 140px); }
+  .note.unrolled .text{ display:block; font-size:20px; line-height:1.2; text-align:center; font-weight:700; }
+  .note.unrolled .hint{ display:block; font-size:32px; margin-top:6px; }
+  /* color themes */
+  .paper[color="peach"] { background:#FFD39B; }
+  .paper[color="mint"]  { background:#CDEEDB; }
+  .paper[color="lemon"] { background:#FFF27D; }
+  .paper[color="sky"]   { background:#BFE4FF; }
+  .paper[color="rose"]  { background:#FFB1C8; }
+  /* Dragging */
+  .note.dragging { pointer-events:none; opacity:.95; transform: translate(-50%, -50%) scale(1.02) rotate(1deg); }
+  .note.dragging { pointer-events:none; opacity:.95; transform: translate(-50%, -50%) scale(1.02) rotate(1deg); }
+
+  /* Drop feedback */
+  .drop-zone.blink { animation: blink 750ms ease; }
+  @keyframes blink{ 0%{box-shadow:0 0 0 0 #fff8, inset 0 0 0 2px #fff6} 100%{box-shadow:0 0 0 22px #fff0} }
+
+  /* Sparkles */
+  .sparkle{ position:absolute; width:8px; height:8px; background:#fff; border-radius:50%; box-shadow:0 0 12px 4px #fff8; opacity:.8; animation: drift 10s linear infinite; }
+  @keyframes drift{ from{ transform: translateY(110vh) translateX(0) scale(.6); opacity:.0 } to{ transform: translateY(-10vh) translateX(30px) scale(1); opacity:.8 } }
+
+  /* Labels inside zones */
+  .zone-label{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-weight:800; letter-spacing:.5px; text-align:center; line-height:1.1; color:#0008; }
+  .left .zone-label{ content:""; }
+
+  .controls{ position: absolute; right: 16px; top: 16px; display:flex; gap:10px }
+  .btn{ background:#fff; border:0; padding:8px 12px; border-radius:12px; font-weight:700; box-shadow:0 6px 16px #0001; cursor:pointer }
+
+  .site-footer{ text-align:center; font-weight:800; letter-spacing:.4px; padding:10px 16px 14px; opacity:.85; text-shadow:0 1px #ffffff8a; }
+
+  /* Mobile tweaks */
+  @media (max-width: 900px){
+    .stage{ grid-template-columns: 1fr; grid-template-rows: .7fr .9fr .9fr; gap:12px }
+    .drop-zone{ height:52vh }
+    .jar{ width:min(300px, 60vw) }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Summer Memories Jar <span class="sun">☀️</span></h1>
+    <h2>Take the phrase, make it <em>Past Simple</em> and say if you did it or not.</h2>
+    <div class="progress" aria-label="Progress"><div class="fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel"></div>
+  </header>
+
+  <div class="stage">
+    <!-- LEFT: Throw away zone (note disappears) -->
+    <section class="drop-zone left" id="zoneLeft" aria-label="Throw away">
+      <h3>Discard</h3>
+      <div class="zone-label">Drag here — it disappears ✨</div>
+    </section>
+
+    <!-- CENTER: Jar -->
+    <section class="jar-wrap">
+      <div class="jar-photo" id="jar" role="button" aria-label="Memory jar" title="Click the jar to get a note">
+        
+      </div>
+      <div class="counter" id="counter">20</div>
+      <div class="jar-hint">Click the jar to get a note 📝</div>
+      <!-- dynamic note appears here -->
+    </section>
+
+    <!-- RIGHT: Keep zone (note stays where dropped) -->
+    <section class="drop-zone right" id="zoneRight" aria-label="Keep board">
+      <h3>Keep</h3>
+      <div class="zone-label">Drag here — it stays 📌</div>
+    </section>
+
+    <div class="controls">
+      <button class="btn" id="resetBtn">Reset</button>
+      <button class="btn" id="shuffleBtn">Shuffle</button>
+    </div>
+  </div>
+  <footer class="site-footer">by Teachy Witchy</footer>
+</div>
+
+<script>
+// ================================
+// Data: phrases with emoji clues
+// ================================
+const PHRASES = [
+  {t:"to grow a flower",           e:"🌱🌼🪴"},
+  {t:"to play football",            e:"⚽️🧑‍🤝‍🧑"},
+  {t:"to learn about computers",    e:"💻📚"},
+  {t:"to send a letter",            e:"✉️📮"},
+  {t:"to make photos",              e:"📸✨"},
+  {t:"to climb down a cliff",       e:"🧗‍♀️🪨⬇️"},
+  {t:"to design a model village",   e:"🏘️📐"},
+  {t:"to cook delicious food",      e:"🍳😋"},
+  {t:"to get to the taiga",         e:"🌲🦌🗺️"},
+  {t:"to go to the zoo",            e:"🦁🦓🏞️"},
+  {t:"to play computer games",      e:"🎮🕹️"},
+  {t:"to read the tales",           e:"📖🧚"},
+  {t:"to go on a boat trip",        e:"🛶🌊"},
+  {t:"to walk in the woods",        e:"🚶‍♀️🌲"},
+  {t:"to ride a bicycle",           e:"🚲💨"},
+  {t:"to play tennis",              e:"🎾"},
+  {t:"to go hiking in the woods",   e:"🥾🌲⛰️"},
+  {t:"to swim and dive in the sea", e:"🏊‍♀️🤿🌊"},
+  {t:"to sing songs by the fire",   e:"🎵🔥"},
+  {t:"to go to the fair",           e:"🎡🍭"},
+];
+
+let deck = [...PHRASES];
+const colorPool = ["peach","mint","lemon","sky","rose"];
+
+// ================================
+// Helpers
+// ================================
+function $(sel, root=document){ return root.querySelector(sel); }
+function rand(a){ return a[Math.floor(Math.random()*a.length)]; }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// ================================
+// Audio: tiny magical sounds via WebAudio (no external files needed)
+// ================================
+const AudioKit = (()=>{
+  const ctx = new (window.AudioContext||window.webkitAudioContext)();
+  const master = ctx.createGain();
+  master.gain.value = 0.2; master.connect(ctx.destination);
+
+  function tone(freq=440, dur=0.18, type='sine', when=0){
+    const t = ctx.currentTime + when;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.5,t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g).connect(master);
+    o.start(t); o.stop(t+dur+0.02);
+  }
+  function twinkle(){
+    // Little arpeggio
+    const base = 660 + Math.random()*60;
+    [0, .08, .16, .24].forEach((w,i)=> tone(base*[1, 5/4, 3/2, 2][i%4], 0.18, i%2? 'triangle':'sine', w));
+  }
+  function whoosh(){
+    // Noise burst for disappearing
+    const t0 = ctx.currentTime;
+    const buflen = 0.3*ctx.sampleRate; const buffer = ctx.createBuffer(1, buflen, ctx.sampleRate); const data = buffer.getChannelData(0);
+    for(let i=0;i<buflen;i++){ data[i] = (Math.random()*2-1) * (1-i/buflen); }
+    const src = ctx.createBufferSource(); src.buffer = buffer; const g = ctx.createGain();
+    g.gain.value = 0.4; g.gain.exponentialRampToValueAtTime(0.0001, t0+0.35);
+    src.connect(g).connect(master); src.start();
+  }
+  function pop(){ tone(440, .1, 'square'); tone(880, .12, 'sine', .05); }
+  function resume(){ if(ctx.state === 'suspended') ctx.resume(); }
+  return {twinkle, whoosh, pop, resume};
+})();
+
+// ================================
+// Sparkles background
+// ================================
+(function makeSparkles(){
+  for(let i=0;i<30;i++){
+    const s = document.createElement('div'); s.className='sparkle';
+    s.style.left = Math.random()*100 + 'vw';
+    s.style.animationDelay = (-Math.random()*10)+'s';
+    s.style.opacity = .6 + Math.random()*0.3;
+    document.body.appendChild(s);
+  }
+})();
+
+// ================================
+// Jar + Notes mechanics
+// ================================
+const jar = $('#jar');
+const counter = $('#counter');
+const zoneLeft = $('#zoneLeft');
+const zoneRight = $('#zoneRight');
+const jarWrap = jar.parentElement; // for inserting notes
+const progressFill = $('#progressFill');
+const progressLabel = $('#progressLabel');
+const TOTAL = PHRASES.length;
+
+function updateCounter(){
+  counter.textContent = deck.length;
+  updateProgress();
+}
+function updateProgress(){
+  const done = TOTAL - deck.length;
+  const pct = Math.round(done / TOTAL * 100);
+  if(progressFill) progressFill.style.width = pct + '%';
+  if(progressLabel) progressLabel.textContent = `Progress: ${done}/${TOTAL}`;
+}
+
+function fitText(paper){
+  const text = paper.querySelector('.text');
+  const hint = paper.querySelector('.hint');
+  if(!text||!hint) return;
+  let sizeText = 20, sizeHint = 32;
+  const maxH = paper.clientHeight - 24;
+  for(let i=0;i<6;i++){
+    if(text.scrollHeight <= maxH) break;
+    sizeText -= 2; sizeHint -= 2;
+    text.style.fontSize = sizeText + 'px';
+    hint.style.fontSize = sizeHint + 'px';
+  }
+}
+
+function drawFromJar(ev){
+  if(deck.length===0){
+    confetti(jarWrap); AudioKit.twinkle(); return;
+  }
+  const card = deck.splice(Math.floor(Math.random()*deck.length),1)[0];
+  updateCounter();
+  spawnNote(card, ev);
+}
+
+function spawnNote(card, ev){
+  const note = document.createElement('div');
+  note.className = 'note rolled';
+  note.style.zIndex = 10 + Math.floor(Math.random()*100);
+  note.innerHTML = `
+    <div class="paper" color="${rand(colorPool)}">
+      <div class="crease"></div>
+      <div class="text">
+        <div>${card.t}</div>
+        <div class="hint">${card.e}</div>
+      </div>
+      <div class="fold-left"></div>
+      <div class="fold-right"></div>
+    </div>
+  `;
+  jarWrap.appendChild(note);
+
+  // place note at click position or center
+  const bounds = jarWrap.getBoundingClientRect();
+  let x = bounds.width/2, y = bounds.height*0.44;
+  if(ev && ev.clientX){ x = ev.clientX - bounds.left; y = ev.clientY - bounds.top; }
+  note.style.left = x + 'px';
+  note.style.top = y + 'px';
+
+  // Entry animation
+  note.animate([
+    { transform:'translate(-50%,-50%) scale(.5) rotate(-12deg)', opacity:0 },
+    { transform:'translate(-50%,-50%) scale(1) rotate(-1deg)', opacity:1 }
+  ], { duration:500, easing:'cubic-bezier(.18,.89,.32,1.28)' });
+  AudioKit.resume(); AudioKit.twinkle();
+
+  // Unroll on click/tap
+  note.addEventListener('click', (e)=>{
+    if(dragging) return;
+    if(note.classList.contains('rolled')){
+      note.classList.remove('rolled');
+      // choose fixed size variant once, then keep it
+      if((card.t + ' ' + card.e).length > 26){ note.classList.add('wide'); } else { note.classList.remove('wide'); }
+      note.classList.add('unrolled');
+      const paper = note.querySelector('.paper');
+      fitText(paper);
+      AudioKit.pop();
+    }
+  }, {once:false});
+
+  // Dragging with pointer events
+  let dragging=false, pointerDown=false, startX=0, startY=0, offX=0, offY=0;
+  note.addEventListener('pointerdown', (e)=>{
+    if(e.button!==0) return;
+    pointerDown = true;
+    dragging=false; note.setPointerCapture && note.setPointerCapture(e.pointerId);
+    const r = note.getBoundingClientRect();
+    startX = e.clientX; startY = e.clientY; offX = e.clientX - r.left; offY = e.clientY - r.top;
+  });
+  window.addEventListener('pointermove', (e)=>{
+    if(!pointerDown) return;
+    // start dragging only after small threshold to avoid click jank
+    if(!dragging){
+      if(Math.abs(e.clientX-startX)>6 || Math.abs(e.clientY-startY)>6){
+        dragging = true; note.classList.add('dragging');
+      } else { return; }
+    }
+    const bounds = jarWrap.getBoundingClientRect();
+    const x = e.clientX - bounds.left - offX; 
+    const y = e.clientY - bounds.top - offY;
+    note.style.left = x + 'px';
+    note.style.top = y + 'px';
+    note.style.transform = 'none';
+  });
+  window.addEventListener('pointerup', (e)=>{
+    pointerDown = false;
+    note.releasePointerCapture && note.releasePointerCapture(e.pointerId);
+    if(!dragging){ return; }
+    dragging=false; note.classList.remove('dragging');
+    const nr = note.getBoundingClientRect();
+    const L = zoneLeft.getBoundingClientRect();
+    const R = zoneRight.getBoundingClientRect();
+
+    if(overlaps(nr,L)){
+      zoneLeft.classList.add('blink'); setTimeout(()=>zoneLeft.classList.remove('blink'),750);
+      vanish(note); AudioKit.whoosh();
+    } else if(overlaps(nr,R)){
+      zoneRight.classList.add('blink'); setTimeout(()=>zoneRight.classList.remove('blink'),750);
+      const relX = nr.left - R.left; const relY = nr.top - R.top;
+      note.style.left = relX + 'px'; note.style.top = relY + 'px'; note.style.transform='none';
+      note.style.position = 'absolute';
+      zoneRight.appendChild(note);
+      AudioKit.twinkle();
+    } else {
+      note.animate([{transform:'translateY(0)'},{transform:'translateY(-3px)'},{transform:'translateY(0)'}],{duration:200});
+    }
+  });
+}
+
+function overlaps(a,b){
+  return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+}
+
+function vanish(el){
+  el.animate([
+    { transform:'scale(1)', opacity:1, filter:'blur(0px)' },
+    { transform:'scale(.6) rotate(-8deg)', opacity:0, filter:'blur(6px)' }
+  ], { duration:380, easing:'ease-in' }).onfinish = ()=> el.remove();
+}
+
+// Confetti when the jar is empty
+function confetti(root){
+  for(let i=0;i<28;i++){
+    const c=document.createElement('div'); c.style.position='absolute'; c.style.width='10px'; c.style.height='10px'; c.style.borderRadius='3px';
+    c.style.background = `hsl(${Math.random()*360},90%,70%)`;
+    c.style.left = (50 + (Math.random()*40-20)) + '%'; c.style.top='38%';
+    c.style.transform=`translate(-50%,-50%)`;
+    root.appendChild(c);
+    c.animate([
+      { transform:'translate(-50%,-50%) rotate(0deg)', opacity:1 },
+      { transform:`translate(${Math.random()*200-100}px, ${120+Math.random()*80}px) rotate(${Math.random()*360}deg)`, opacity:0 }
+    ], {duration:900 + Math.random()*500, easing:'cubic-bezier(.11,.8,.32,1)'}).onfinish=()=>c.remove();
+  }
+}
+
+// Controls
+$('#resetBtn').addEventListener('click', ()=>{ deck=[...PHRASES]; updateCounter(); [...zoneRight.querySelectorAll('.note')].forEach(n=>n.remove()); AudioKit.twinkle(); });
+$('#shuffleBtn').addEventListener('click', ()=>{ deck = shuffle(deck); updateCounter(); AudioKit.pop(); });
+
+// Jar click
+jar.addEventListener('click', (e)=> drawFromJar(e));
+
+// init
+updateCounter();
+</script>
+</body>
+</html>
